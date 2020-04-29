@@ -1,5 +1,5 @@
 ---
 - name: Join controller node to Kubernetes master
-  shell: "{{ kubernetes_controller_join_command }}"
+  shell: "{{ kubernetes_controller_join_command }} --config /root/kubeadm_init_config.yml"
   args:
     creates: /etc/kubernetes/manifests/kube-apiserver.yaml

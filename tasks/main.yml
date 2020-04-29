@@ -31,6 +31,12 @@
     path: /etc/kubernetes/admin.conf
   register: kubernetes_init_stat
 
+- name: Create kubeadm init config
+  template:
+    src: kubernetes/kubeadm_init_config.yml.j2
+    dest: /root/kubeadm_init_config.yml
+  when: kubernetes_role == 'master'
+
 - when: kubernetes_role == 'master' and kubernetes_first_master
   block:
     # Set up master.
