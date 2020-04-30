@@ -1,0 +1,17 @@
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: JoinConfiguration
+discovery:
+  bootstrapToken:
+    apiServerEndpoint: {{ kubernetes_control_plane_endpoint }}:8443
+    token: {{ kubernetes_join_token }}
+    caCertHashes:
+      - {{ kubernetes_join_ca_hash }}
+controlPlane:
+  certificateKey: {{ kubernetes_join_certkey }}
+  localAPIEndpoint:
+    advertiseAddress: {{ kubernetes_apiserver_advertise_address }}
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+kubernetesVersion: {{ kubernetes_version_kubeadm }}
+controlPlaneEndpoint: {{ kubernetes_control_plane_endpoint }}:8443

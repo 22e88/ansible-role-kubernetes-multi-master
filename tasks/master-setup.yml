@@ -1,10 +1,22 @@
 ---
+- name: Initial cluster
+  set_fact:
+    initial_cluster: "{{ ansible_hostname }}=https://{{ kubernetes_apiserver_advertise_address }}:2380"
+    initial_cluster_token: "{{ lookup('password', '/dev/null') }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups[kubernetes_controllers_group] }}"
+
+- name: Create kubeadm init config
+  template:
+    src: kubeadm_init_config.yml.j2
+    dest: /root/kubeadm_init_config.yml
+
 - name: Initialize Kubernetes master with kubeadm init.
   command: >
     kubeadm init
     --config /root/kubeadm_init_config.yml
     --ignore-preflight-errors={{ kubernetes_ignore_preflight_errors }}
-    {{ kubernetes_kubeadm_init_extra_opts }}
   register: kubeadmin_init
   when: not kubernetes_init_stat.stat.exists
 
@@ -76,3 +88,32 @@
   when:
     - kubernetes_enable_web_ui | bool
     - kubernetes_dashboard_service is failed
+
+- name: Get the certificate key for joining controller
+  shell: |
+    kubeadm init phase upload-certs --upload-certs |grep -v '^[[]'
+  changed_when: false
+  register: kubernetes_join_certkey_result
+
+- name: Get the kubeadm join command
+  shell: |
+    kubeadm token create --print-join-command
+  changed_when: false
+  register: kubernetes_join_command_result
+
+- name: Create facts for joining controllers
+  set_fact:
+    kubernetes_join_token: "{{ kubernetes_join_command_result.stdout|regex_replace('.*--token (\\S*).*','\\1') }}"
+    kubernetes_join_ca_hash: "{{ kubernetes_join_command_result.stdout|regex_replace('.*--discovery-token-ca-cert-hash (\\S*).*','\\1') }}"
+    kubernetes_join_certkey: "{{ kubernetes_join_certkey_result.stdout }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups[kubernetes_controllers_group] }}"
+
+- name: Create facts for joining nodes
+  set_fact:
+    kubernetes_join_command: "{{ kubernetes_join_command_result.stdout }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups[kubernetes_nodes_group] }}"
+

@@ -1,24 +1,12 @@
 apiVersion: kubeadm.k8s.io/v1beta2
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{ kubernetes_apiserver_advertise_address }}
+---
+apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
 kubernetesVersion: {{ kubernetes_version_kubeadm }}
-etcd:
-  local:
-    extraArgs:
-      advertise-client-urls: https://{{ kubernetes_apiserver_advertise_address }}:2379
-      initial-advertise-peer-urls: https://{{ kubernetes_apiserver_advertise_address }}:2380
-      initial-cluster: mgmt1-master1=https://{{ kubernetes_apiserver_advertise_address }}:2380
-      listen-client-urls: https://127.0.0.1:2379,https://{{ kubernetes_apiserver_advertise_address }}:2379
-      listen-peer-urls: https://{{ kubernetes_apiserver_advertise_address }}:2380
-    serverCertSANs:
-      - "{{ kubernetes_apiserver_advertise_address }}"
-    peerCertSANs:
-      - "{{ kubernetes_apiserver_advertise_address }}"
-apiServer:
-  extraArgs:
-    advertise-address: {{ kubernetes_apiserver_advertise_address }}
-  controlPlaneEndpoint: {{ kubernetes_control_plane_endpoint }}:8443
-  certSANs:
-    - {{ kubernetes_control_plane_endpoint }}
+controlPlaneEndpoint: {{ kubernetes_control_plane_endpoint }}:8443
 networking:
   podSubnet: {{ kubernetes_pod_network.cidr }}
 

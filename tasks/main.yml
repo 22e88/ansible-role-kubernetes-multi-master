@@ -31,53 +31,12 @@
     path: /etc/kubernetes/admin.conf
   register: kubernetes_init_stat
 
-- name: Create kubeadm init config
-  template:
-    src: kubernetes/kubeadm_init_config.yml.j2
-    dest: /root/kubeadm_init_config.yml
-  when: kubernetes_role == 'master'
-
-- when: kubernetes_role == 'master' and kubernetes_first_master
-  block:
-    # Set up master.
-    - include_tasks: master-setup.yml
-
-    # Set up secondary masters
-    - name: Get the kubeadm join command for controllers from the Kubernetes master.
-      shell: |
-        kubeadm token create --print-join-command --certificate-key `kubeadm init phase upload-certs --upload-certs |grep -v '^[[]'`
-      changed_when: false
-      register: kubernetes_controller_join_command_result
-
-    # Set up nodes.
-    - name: Get the kubeadm join command from the Kubernetes master.
-      command: kubeadm token create --print-join-command
-      changed_when: false
-      register: kubernetes_join_command_result
-
-- name: Set the kubeadm join command for controllers
-  set_fact:
-    kubernetes_controller_join_command: >
-      {{ kubernetes_controller_join_command_result.stdout }}
-      {{ kubernetes_controller_join_command_extra_opts }}
-  when: kubernetes_controller_join_command_result.stdout is defined
-  delegate_to: "{{ item }}"
-  delegate_facts: true
-  with_items: "{{ groups[kubernetes_controllers_group] }}"
-
-- name: Set the kubeadm join command for nodes
-  set_fact:
-    kubernetes_join_command: >
-      {{ kubernetes_join_command_result.stdout }}
-      {{ kubernetes_join_command_extra_opts }}
-  when: kubernetes_join_command_result.stdout is defined
-  delegate_to: "{{ item }}"
-  delegate_facts: true
-  with_items: "{{ groups[kubernetes_nodes_group] }}"
+- name: Initialize first master
+  include_tasks: master-setup.yml
+  when: kubernetes_role == 'master' and kubernetes_first_master
 
 - include_tasks: node-setup.yml
   when: kubernetes_role == 'node'
 
 - include_tasks: second-master-setup.yml
   when: kubernetes_role == 'master' and not kubernetes_first_master
-

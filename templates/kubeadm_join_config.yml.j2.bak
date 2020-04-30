@@ -1,0 +1,36 @@
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: JoinConfiguration
+discovery:
+  bootstrapToken:
+    apiServerEndpoint: {{ kubernetes_control_plane_endpoint }}:8443
+    token: {{ kubernetes_join_token }}
+    caCertHashes:
+      - {{ kubernetes_join_ca_hash }}
+controlPlane:
+  certificateKey: {{ kubernetes_join_certkey }}
+  localAPIEndpoint:
+    advertiseAddress: {{ kubernetes_apiserver_advertise_address }}
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+kubernetesVersion: {{ kubernetes_version_kubeadm }}
+controlPlaneEndpoint: {{ kubernetes_control_plane_endpoint }}:8443
+etcd:
+  local:
+    extraArgs:
+      advertise-client-urls: https://{{ kubernetes_apiserver_advertise_address }}:2379
+      listen-client-urls: https://127.0.0.1:2379,https://{{ kubernetes_apiserver_advertise_address }}:2379
+      listen-peer-urls: https://{{ kubernetes_apiserver_advertise_address }}:2380
+      initial-cluster: {{ initial_cluster }}
+      initial-cluster-state: existing
+      initial-cluster-token: {{ initial_cluster_token }}
+      initial-advertise-peer-urls: https://{{ kubernetes_apiserver_advertise_address }}:2380
+    serverCertSANs:
+      - "{{ kubernetes_apiserver_advertise_address }}"
+    peerCertSANs:
+      - "{{ kubernetes_apiserver_advertise_address }}"
+apiServer:
+  extraArgs:
+    advertise-address: {{ kubernetes_apiserver_advertise_address }}
+  certSANs:
+    - {{ kubernetes_control_plane_endpoint }}

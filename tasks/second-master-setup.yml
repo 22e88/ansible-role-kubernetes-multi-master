@@ -1,5 +1,32 @@
 ---
+- name: Add member to initial cluster new
+  set_fact:
+    initial_cluster_new: "{{ initial_cluster }},{{ ansible_hostname }}=https://{{ kubernetes_apiserver_advertise_address }}:2380"
+
+- name: Change initial cluster for all controllers to the new one
+  set_fact:
+    initial_cluster: "{{ initial_cluster_new }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups[kubernetes_controllers_group] }}"
+
+- name: Create controller join template
+  template:
+    src: kubeadm_join_config.yml.j2
+    dest: /root/kubeadm_join_config.yml
+
 - name: Join controller node to Kubernetes master
-  shell: "{{ kubernetes_controller_join_command }} --config /root/kubeadm_init_config.yml"
+  command: "kubeadm join {{ kubernetes_control_plane_endpoint }}:8443 --config=/root/kubeadm_join_config.yml"
   args:
     creates: /etc/kubernetes/manifests/kube-apiserver.yaml
+
+- name: Ensure .kube directory exists.
+  file:
+    path: ~/.kube
+    state: directory
+
+- name: Symlink the kubectl admin.conf to ~/.kube/conf.
+  file:
+    src: /etc/kubernetes/admin.conf
+    dest: ~/.kube/config
+    state: link
