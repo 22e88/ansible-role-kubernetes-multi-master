@@ -77,7 +77,7 @@
     - not kubernetes_init_stat.stat.exists
 
 - name: Check if Kubernetes Dashboard UI service already exists.
-  shell: kubectl get services --namespace kube-system | grep -q kubernetes-dashboard
+  shell: kubectl get services --namespace kubernetes-dashboard | grep -q kubernetes-dashboard
   changed_when: false
   failed_when: false
   register: kubernetes_dashboard_service
@@ -87,7 +87,7 @@
   command: "kubectl create -f {{ kubernetes_web_ui_manifest_file }}"
   when:
     - kubernetes_enable_web_ui | bool
-    - kubernetes_dashboard_service is failed
+    - kubernetes_dashboard_service.rc != 0
 
 - name: Get the certificate key for joining controller
   shell: |
