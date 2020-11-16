@@ -27,6 +27,7 @@ kubernetes_web_ui_manifest_file: https://raw.githubusercontent.com/kubernetes/da
 kubernetes_controllers_group: masters
 kubernetes_nodes_group: nodes
 
+kubernetes_service_network_cidr: 10.96.0.0/12
 kubernetes_pod_network:
   # Flannel CNI.
   cni: 'flannel'

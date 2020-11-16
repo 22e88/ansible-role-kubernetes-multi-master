@@ -9,4 +9,4 @@ kubernetesVersion: {{ kubernetes_version_kubeadm }}
 controlPlaneEndpoint: {{ kubernetes_control_plane_endpoint }}:8443
 networking:
   podSubnet: {{ kubernetes_pod_network.cidr }}
-
+  serviceSubnet: {{ kubernetes_service_network_cidr }}
